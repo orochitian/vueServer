@@ -4,25 +4,6 @@ var bodyParser = require('body-parser');
 var sidebar = require('./sidebar');
 var userModel = require('./model/userModel');
 
-var users = [
-    {
-        id: 1,
-        username: 'admin',
-        fullname: 'lirui',
-        sex: '男'
-    }, {
-        id: 2,
-        username: 'cangjing',
-        fullname: '苍井空',
-        sex: '女'
-    }, {
-        id: 3,
-        username: 'xiaoze',
-        fullname: '小泽玛利亚',
-        sex: '女'
-    },
-]
-
 app.use('*', (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -34,44 +15,93 @@ app.use('*', (req, res, next) => {
 app.use( bodyParser.urlencoded({extended : true}) );
 app.use( bodyParser.json() );
 
+
 //  获取左侧导航
 app.get('/getSidebar', (req, res) => {
     res.send(sidebar)
 });
 
-//  获取用户列表
-app.get('/user/getUserList', (req, res) => {
-    userModel.find({}, '-password').then(users => {
-        res.send(users);
-    });
-});
-
-//  获取指定用户信息
-app.get('/user/getUserById', (req, res) => {
-    console.log(req.body);
-    userModel.findById(req.body._id, (err, user) => {
-        if( !err ) {
-            console.log(user);
-            res.json(user);
+//  登录
+app.post('/login', (req, res) => {
+    userModel.find({
+        username: req.body.username,
+        password: req.body.password
+    }).then(user => {
+        if( user.length < 1 ) {
+            res.send(false);
         } else {
-            res.status(401).send('用户未找到！');
+            res.send(true);
         }
     });
 });
 
+//  获取用户列表
+app.get('/user/getUserList', (req, res) => {
+    var pageNum = req.query.pageNum * 1 || 1;
+    var pageSize = req.query.pageSize * 1 || 5;
+    userModel.find({}).estimatedDocumentCount().then(count => {
+        if( count === 0 ) {
+            res.json({
+                users: [],
+                pageNum: 1,
+                pageSize,
+                count
+            });
+            return;
+        }
+        if( pageSize * pageNum > count ) {
+            pageNum = Math.ceil(count / pageSize);
+        }
+        userModel.find().skip((pageNum-1) * pageSize).limit(pageSize).then(users => {
+            res.json({
+                users,
+                pageNum: pageNum || 1,
+                pageSize,
+                count
+            });
+        });
+    });
+});
+
+//  获取指定用户信息
+// app.get('/user/getUserById', (req, res) => {
+//     userModel.findById(req.query._id, (err, user) => {
+//         if( !err ) {
+//             res.json(user);
+//         } else {
+//             res.status(401).send('用户未找到！');
+//         }
+//     });
+// });
+
 //  添加用户
 app.post('/user/addUser', (req, res) => {
-    userModel.create(req.body, err => {
-        if( !err ) {
-            res.send('用户添加成功！');
+    userModel.find({username: req.body.username}).then(user => {
+        if( user.length < 1 ) {
+            userModel.create(req.body, err => {
+                res.send(true);
+            });
         } else {
-            res.status(401).send('用户添加失败！');
+            res.send(false);
+        }
+    });
+
+});
+
+//  编辑用户
+app.post('/user/updateUser', (req, res) => {
+    userModel.findByIdAndUpdate(req.body._id, req.body, err => {
+        if( !err ) {
+            res.send('用户编辑成功！');
+        } else {
+            res.status(401).send('用户编辑失败！');
         }
     });
 });
 
 //  删除用户
 app.post('/user/delUser', (req, res) => {
+    //  mongoose 建议使用delete删除  而不是remove
     userModel.findByIdAndDelete(req.body._id, err => {
         if( !err ) {
             res.send('用户删除成功！');
