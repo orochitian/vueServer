@@ -7,11 +7,8 @@ module.exports = [
     }, {
         "title": "博客",
         "name": "blog",
-        "icon": "ios-keypad",
-        "items": [
-            {"title": "工作", "to":"/blog/work", "name": "work", "icon": "ios-keypad"},
-            {"title": "其他", "to":"/blog/other", "name": "other", "icon": "ios-keypad"}
-        ]
+        "icon": "md-create",
+        "to": "/blog"
     }, {
         "title": "用户管理",
         "name": "userManage",

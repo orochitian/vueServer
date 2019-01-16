@@ -15,6 +15,7 @@ app.use('*', (req, res, next) => {
 app.use( bodyParser.urlencoded({extended : true}) );
 app.use( bodyParser.json() );
 
+app.use('/blog', require('./routers/blog'));
 
 //  获取左侧导航
 app.get('/getSidebar', (req, res) => {
