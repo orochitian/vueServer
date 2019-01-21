@@ -39,7 +39,7 @@ app.post('/login', (req, res) => {
 //  获取用户列表
 app.get('/user/getUserList', (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
-    var pageSize = req.query.pageSize * 1 || 5;
+    var pageSize = req.query.pageSize * 1 || 10;
     userModel.find({}).estimatedDocumentCount().then(count => {
         if( count === 0 ) {
             res.json({

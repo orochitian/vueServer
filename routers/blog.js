@@ -1,18 +1,11 @@
 var router = require('express').Router();
 var blog = require('../model/blogModel');
 
-//  添加文章
-router.post('/add', (req, res) => {
-    blog.create(req.body, err => {
-        res.send(req.body);
-    });
-});
-
 //  获取文章列表
 router.get('/getBlogList', (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
-    var pageSize = req.query.pageSize * 1 || 5;
-    blog.find({}).estimatedDocumentCount().then(count => {
+    var pageSize = req.query.pageSize * 1 || 10;
+    blog.find().estimatedDocumentCount().then(count => {
         if( count === 0 ) {
             res.json({
                 list: [],
@@ -25,7 +18,7 @@ router.get('/getBlogList', (req, res) => {
         if( pageSize * pageNum > count ) {
             pageNum = Math.ceil(count / pageSize);
         }
-        blog.find().skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
+        blog.find().sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
             res.json({
                 list,
                 pageNum: pageNum || 1,
@@ -33,6 +26,36 @@ router.get('/getBlogList', (req, res) => {
                 count
             });
         });
+    });
+});
+
+//  添加文章
+router.post('/add', (req, res) => {
+    blog.create(req.body, err => {
+        res.send(req.body);
+    });
+});
+
+//  编辑文章
+router.post('/edit', (req, res) => {
+    blog.findByIdAndUpdate(req.body.id, req.body.formData, err => {
+        if( !err ) {
+            res.send('文章编辑成功！');
+        } else {
+            res.status(401).send('文章编辑失败！');
+        }
+    });
+});
+
+//  删除文章
+router.post('/delete', (req, res) => {
+    //  mongoose 建议使用delete删除  而不是remove
+    blog.findByIdAndDelete(req.body._id, err => {
+        if( !err ) {
+            res.send('文章删除成功！');
+        } else {
+            res.status(401).send('文章删除失败！');
+        }
     });
 });
 
