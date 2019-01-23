@@ -5,7 +5,8 @@ var blog = require('../model/blogModel');
 router.get('/getBlogList', (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
     var pageSize = req.query.pageSize * 1 || 10;
-    blog.find().estimatedDocumentCount().then(count => {
+    var condition = req.query.search ? {title: {$regex: new RegExp(JSON.parse(req.query.search).title)}} : {};
+    blog.find(condition).estimatedDocumentCount().then(count => {
         if( count === 0 ) {
             res.json({
                 list: [],
@@ -18,7 +19,7 @@ router.get('/getBlogList', (req, res) => {
         if( pageSize * pageNum > count ) {
             pageNum = Math.ceil(count / pageSize);
         }
-        blog.find().sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
+        blog.find(condition).sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
             res.json({
                 list,
                 pageNum: pageNum || 1,
@@ -38,7 +39,7 @@ router.post('/add', (req, res) => {
 
 //  编辑文章
 router.post('/edit', (req, res) => {
-    blog.findByIdAndUpdate(req.body.id, req.body.formData, err => {
+    blog.findOneAndUpdate({_id: req.body.id}, req.body.formData, err => {
         if( !err ) {
             res.send('文章编辑成功！');
         } else {
