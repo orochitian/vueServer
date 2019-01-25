@@ -5,7 +5,7 @@ var blog = require('../model/blogModel');
 router.get('/getBlogList', (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
     var pageSize = req.query.pageSize * 1 || 10;
-    var condition = req.query.search ? {title: {$regex: new RegExp(JSON.parse(req.query.search).title)}} : {};
+    var condition = req.query.search ? {title: {$regex: new RegExp(JSON.parse(req.query.search).title)}, userId: req.session.userId} : {userId: req.session.userId};
     blog.find(condition).estimatedDocumentCount().then(count => {
         if( count === 0 ) {
             res.json({
@@ -32,6 +32,7 @@ router.get('/getBlogList', (req, res) => {
 
 //  添加文章
 router.post('/add', (req, res) => {
+    req.body.userId = req.session.userId;
     blog.create(req.body, err => {
         res.send(req.body);
     });

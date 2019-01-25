@@ -23,14 +23,16 @@ app.use(session({
 
 //  登录
 app.post('/login', (req, res) => {
-    userModel.find({
+    //  登录成功后，更新用户的sessionid。作用是在以后的请求中对比当前用户的sessionid和请求中的sessionid是否一致，如果不一致代表登录已经失效。
+    //  通过session.userId记录当前用户是谁。
+    userModel.findOneAndUpdate({
         username: req.body.username,
         password: req.body.password
-    }).then(user => {
-        if( user.length < 1 ) {
+    }, {sessionId: req.sessionID}).then(user => {
+        if( !user ) {
             res.send(false);
         } else {
-            req.session.sign = true;
+            req.session.userId = user._id;
             res.send(true);
         }
     });
@@ -38,17 +40,49 @@ app.post('/login', (req, res) => {
 
 //  登出
 app.get('/logout', (req, res) => {
-    req.session.sign = false;
+    req.session.userId = null;
     res.send(true);
 });
 
+//  注册
+app.post('/regist', (req, res) => {
+    userModel.find({username: req.body.username}).then(user => {
+        if( user.length < 1 ) {
+            userModel.create(req.body, err => {
+                res.json({
+                    code: 200,
+                    msg: '注册成功！'
+                });
+            });
+        } else {
+            res.json({
+                code: 201,
+                msg: '该用户名已存在！'
+            });
+        }
+    });
+
+});
+
+//  验证登录状态
 app.use((req, res, next) => {
-    console.log(req.sessionID);
-    if( !req.session.sign ) {
-        res.send({code: 401});
+    //  连userid都没有，就是没登录
+    if( !req.session.userId ) {
+        res.json({
+            code: 401,
+            msg: '未登录！'
+        });
         return;
     }
-    next();
+    //  如果有userid，和数据库里的用户对比，当前用户的sessionid和请求的sessionid一样，表示正常登录。否则表示登录失效。
+    //  这么做可以防止用户重复登录。
+    userModel.findById(req.session.userId).then(user => {
+        if( user.sessionId !== req.sessionID ) {
+            res.json({code: 401, msg: '当前登录已失效！'});
+        } else {
+            next();
+        }
+    });
 });
 
 app.use('/blog', require('./routers/blog'));
