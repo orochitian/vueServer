@@ -3,7 +3,8 @@ var mongo = require('mongoose');
 var blogSchema = new mongo.Schema({
     title: String,
     classify: String,
-    content: String
+    content: String,
+    userId: String
 }, {
     timestamps: true
 });
