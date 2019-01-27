@@ -54,6 +54,13 @@ router.post('/updateUser', (req, res) => {
     });
 });
 
+//  获取用户详情
+router.get('/detail', (req, res) => {
+    userModel.findById(req.session.userId).then(user => {
+        res.send(user);
+    });
+});
+
 //  删除用户
 router.post('/delUser', (req, res) => {
     //  mongoose 建议使用delete删除  而不是remove
