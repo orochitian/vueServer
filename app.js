@@ -88,7 +88,9 @@ app.use((req, res, next) => {
 app.use('/blog', require('./routers/blog'));
 app.use('/user', require('./routers/user'));
 
-
+/*
+*  mongod --dbpath=/opt/db --bind_ip=0.0.0.0
+* */
 mongo.connect('mongodb://132.232.119.153:27017/vue', { useNewUrlParser: true, useFindAndModify: false }, err => {
     if( err ) {
         console.log('数据库启动失败：', err);
