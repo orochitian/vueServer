@@ -4,6 +4,9 @@ var bodyParser = require('body-parser');
 var userModel = require('./model/userModel');
 var session = require('express-session');
 
+// var cp = require('child_process');
+// var up = cp.fork('./process');
+
 app.use('*', (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "http://localhost:8081");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -84,6 +87,11 @@ app.use((req, res, next) => {
         }
     });
 });
+
+app.post('/test', (req, res) => {
+    console.log(req.body);
+    res.send(req.body);
+})
 
 app.use('/blog', require('./routers/blog'));
 app.use('/user', require('./routers/user'));
