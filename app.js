@@ -7,24 +7,40 @@ var fileUploadModel = require('./model/fileUploadModel');
 var session = require('express-session');
 var formidable = require('formidable');
 var fs = require('fs');
+var history = require('connect-history-api-fallback');
 
 app.use('*', (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "http://localhost:8081");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
     res.header("Access-Control-Allow-Credentials", true);
-    res.header("Content-Type", "application/json;charset=utf-8");
+    // res.header("Content-Type", "application/json; charset=utf-8");
     next();
 });
 
+app.use(history({
+    index: '/'
+}))
+
 app.use( '/fileupload', express.static('/fileupload') );
+app.use( '/dist', express.static('./dist') );
+
 app.use( bodyParser.urlencoded({extended : true}) );
 app.use( bodyParser.json() );
+
+
+
 app.use(session({
     secret : 'ryan lee',
     resave : true,
     saveUninitialized : true
 }));
+
+app.get('/', (req, res) => {
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.sendFile(__dirname + "/dist/index.html");
+});
+
 
 //  登录
 app.post('/login', (req, res) => {
@@ -43,6 +59,7 @@ app.post('/login', (req, res) => {
         }
     });
 });
+
 
 //  登出
 app.get('/logout', (req, res) => {
@@ -99,7 +116,7 @@ app.get('/getPhotos', (req, res) => {
     })
 });
 
-app.post('/upload', async (req, res) => {
+app.post('/upload', (req, res) => {
     var uploadDir = "/fileupload/" + req.session.username;
     var form = new formidable.IncomingForm();
     form.uploadDir = uploadDir;
