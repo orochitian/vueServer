@@ -1,11 +1,12 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var mongo = require('mongoose');
 var bodyParser = require('body-parser');
 var userModel = require('./model/userModel');
+var fileUploadModel = require('./model/fileUploadModel');
 var session = require('express-session');
-
-// var cp = require('child_process');
-// var up = cp.fork('./process');
+var formidable = require('formidable');
+var fs = require('fs');
 
 app.use('*', (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "http://localhost:8081");
@@ -16,6 +17,7 @@ app.use('*', (req, res, next) => {
     next();
 });
 
+app.use( '/fileupload', express.static('/fileupload') );
 app.use( bodyParser.urlencoded({extended : true}) );
 app.use( bodyParser.json() );
 app.use(session({
@@ -36,6 +38,7 @@ app.post('/login', (req, res) => {
             res.send(false);
         } else {
             req.session.userId = user._id;
+            req.session.username = user.username;
             res.send(true);
         }
     });
@@ -88,9 +91,57 @@ app.use((req, res, next) => {
     });
 });
 
-app.post('/test', (req, res) => {
-    console.log(req.body);
-    res.send(req.body);
+app.get('/getPhotos', (req, res) => {
+    fileUploadModel.find({user: req.session.username}).then(photos => {
+        res.send({
+            photos
+        })
+    })
+});
+
+app.post('/upload', async (req, res) => {
+    var uploadDir = "/fileupload/" + req.session.username;
+    var form = new formidable.IncomingForm();
+    form.uploadDir = uploadDir;
+    //  是否保留上传文件拓展名
+    form.keepExtensions = true;
+    //  给文件加密
+    form.hash = 'md5';
+
+    function uploadCallback(err, fields, files) {
+        var file = files.upload;
+        //  给已上传文件的MD5值做持久化保存
+        //  每次上传可以查询当前用户下，是否有相同文件。如果有把本次上传文件删除，返回数据库中文件地址。
+        fileUploadModel.findOne({hash: file.hash, user: req.session.username}).then(fileUpload => {
+            if( fileUpload ) {
+                console.log('发现相同文件！');
+                fs.unlink(file.path, () => {
+                    file.path = fileUpload.path;
+                    res.send(file)
+                });
+            } else {
+                console.log('添加文件');
+                fileUploadModel.create({
+                    path: file.path,
+                    hash: file.hash,
+                    user: req.session.username
+                }, err => {
+                    res.send(file);
+                })
+            }
+        })
+    }
+
+    //  判断上传文件路径是否存在，不存在先创建再上传
+    fs.access(uploadDir, err => {
+        if( err ) {
+            fs.mkdir(uploadDir, err => {
+                form.parse(req, uploadCallback);
+            });
+        } else {
+            form.parse(req, uploadCallback);
+        }
+    });
 })
 
 app.use('/blog', require('./routers/blog'));
