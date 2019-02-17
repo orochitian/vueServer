@@ -18,15 +18,13 @@ app.use('*', (req, res, next) => {
     next();
 });
 
-app.use(history({
-    index: '/'
-}))
+app.use(history({index: '/'}));
 
 app.use( '/fileupload', express.static('/fileupload') );
-app.use( '/dist', express.static('./dist') );
+app.use( '/static', express.static('./dist/static') );
 
 app.use( bodyParser.urlencoded({extended : true}) );
-app.use( bodyParser.json() );
+app.use( bodyParser.json({limit: '1mb'}) );
 
 
 

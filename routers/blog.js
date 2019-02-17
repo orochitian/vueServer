@@ -6,7 +6,7 @@ router.get('/getBlogList', (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
     var pageSize = req.query.pageSize * 1 || 10;
     var condition = req.query.search ? {title: {$regex: new RegExp(JSON.parse(req.query.search).title)}, userId: req.session.userId} : {userId: req.session.userId};
-    blog.find(condition).estimatedDocumentCount().then(count => {
+    blog.find(condition, '-content').estimatedDocumentCount().then(count => {
         if( count === 0 ) {
             res.json({
                 list: [],
@@ -19,7 +19,7 @@ router.get('/getBlogList', (req, res) => {
         if( pageSize * pageNum > count ) {
             pageNum = Math.ceil(count / pageSize);
         }
-        blog.find(condition).sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
+        blog.find(condition, '-content').sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
             res.json({
                 list,
                 pageNum: pageNum || 1,
