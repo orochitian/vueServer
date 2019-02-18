@@ -3,7 +3,8 @@ var mongo = require('mongoose');
 var fileUploadSchema = new mongo.Schema({
     path: String,
     hash: String,
-    user: String
+    user: String,
+    name: String
 }, {
     timestamps: true
 });

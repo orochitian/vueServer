@@ -29,20 +29,6 @@ router.get('/getUserList', (req, res) => {
     });
 });
 
-//  添加用户
-router.post('/addUser', (req, res) => {
-    userModel.find({username: req.body.username}).then(user => {
-        if( user.length < 1 ) {
-            userModel.create(req.body, err => {
-                res.send(true);
-            });
-        } else {
-            res.send(false);
-        }
-    });
-
-});
-
 //  编辑用户
 router.post('/updateUser', (req, res) => {
     userModel.findByIdAndUpdate(req.body._id, req.body, err => {

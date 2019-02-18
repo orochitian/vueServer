@@ -3,10 +3,7 @@ var app = express();
 var mongo = require('mongoose');
 var bodyParser = require('body-parser');
 var userModel = require('./model/userModel');
-var fileUploadModel = require('./model/fileUploadModel');
 var session = require('express-session');
-var formidable = require('formidable');
-var fs = require('fs');
 var history = require('connect-history-api-fallback');
 
 app.use('*', (req, res, next) => {
@@ -82,7 +79,6 @@ app.post('/regist', (req, res) => {
             });
         }
     });
-
 });
 
 //  验证登录状态
@@ -106,61 +102,9 @@ app.use((req, res, next) => {
     });
 });
 
-app.get('/getPhotos', (req, res) => {
-    fileUploadModel.find({user: req.session.username}).then(photos => {
-        res.send({
-            photos
-        })
-    })
-});
-
-app.post('/upload', (req, res) => {
-    var uploadDir = "/fileupload/" + req.session.username;
-    var form = new formidable.IncomingForm();
-    form.uploadDir = uploadDir;
-    //  是否保留上传文件拓展名
-    form.keepExtensions = true;
-    //  给文件加密
-    form.hash = 'md5';
-
-    function uploadCallback(err, fields, files) {
-        var file = files.upload;
-        //  给已上传文件的MD5值做持久化保存
-        //  每次上传可以查询当前用户下，是否有相同文件。如果有把本次上传文件删除，返回数据库中文件地址。
-        fileUploadModel.findOne({hash: file.hash, user: req.session.username}).then(fileUpload => {
-            if( fileUpload ) {
-                console.log('发现相同文件！');
-                fs.unlink(file.path, () => {
-                    file.path = fileUpload.path;
-                    res.send(file)
-                });
-            } else {
-                console.log('添加文件');
-                fileUploadModel.create({
-                    path: file.path,
-                    hash: file.hash,
-                    user: req.session.username
-                }, err => {
-                    res.send(file);
-                })
-            }
-        })
-    }
-
-    //  判断上传文件路径是否存在，不存在先创建再上传
-    fs.access(uploadDir, err => {
-        if( err ) {
-            fs.mkdir(uploadDir, err => {
-                form.parse(req, uploadCallback);
-            });
-        } else {
-            form.parse(req, uploadCallback);
-        }
-    });
-})
-
 app.use('/blog', require('./routers/blog'));
 app.use('/user', require('./routers/user'));
+app.use('/upload', require('./routers/upload'));
 
 /*
 *  mongod --dbpath=/opt/db --bind_ip=0.0.0.0
