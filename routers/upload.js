@@ -24,7 +24,10 @@ router.post('/', (req, res) => {
                 console.log('发现相同文件！');
                 fs.unlink(file.path, () => {
                     file.path = fileUpload.path;
-                    res.send(file)
+                    res.send({
+                        isRepeat: true,
+                        file
+                    })
                 });
             } else {
                 console.log('添加文件');
@@ -34,7 +37,10 @@ router.post('/', (req, res) => {
                     name: file.name,
                     user: req.session.username
                 }, err => {
-                    res.send(file);
+                    res.send({
+                        isRepeat: false,
+                        file
+                    });
                 })
             }
         })
