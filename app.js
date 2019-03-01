@@ -109,8 +109,9 @@ app.use('/upload', require('./routers/upload'));
 
 /*
 *  mongod --dbpath=/opt/db --bind_ip=0.0.0.0
+*  132.232.119.153
 * */
-mongo.connect('mongodb://132.232.119.153:27017/vue', { useNewUrlParser: true, useFindAndModify: false }, err => {
+mongo.connect('mongodb://localhost:27017/vue', { useNewUrlParser: true, useFindAndModify: false }, err => {
     if( err ) {
         console.log('数据库启动失败：', err);
     } else {
