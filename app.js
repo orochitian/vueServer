@@ -7,10 +7,10 @@ var session = require('express-session');
 var history = require('connect-history-api-fallback');
 
 app.use('*', (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Origin", "http://localhost");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
-    // res.header("Access-Control-Allow-Credentials", true);
+    res.header("Access-Control-Allow-Credentials", true);
 
     // res.header("Content-Type", "application/json; charset=utf-8");
     next();
@@ -111,7 +111,7 @@ app.use('/upload', require('./routers/upload'));
 *  mongod --dbpath=/opt/db --bind_ip=0.0.0.0
 *  132.232.119.153
 * */
-mongo.connect('mongodb://localhost:27017/vue', { useNewUrlParser: true, useFindAndModify: false }, err => {
+mongo.connect('mongodb://132.232.119.153:27017/vue', { useNewUrlParser: true, useFindAndModify: false }, err => {
     if( err ) {
         console.log('数据库启动失败：', err);
     } else {
