@@ -2,32 +2,54 @@ var router = require('express').Router();
 var blog = require('../model/blogModel');
 
 //  获取文章列表
-router.get('/getBlogList', (req, res) => {
+router.get('/getBlogList', async (req, res) => {
     var pageNum = req.query.pageNum * 1 || 1;
     var pageSize = req.query.pageSize * 1 || 10;
     var condition = req.query.search ? {title: {$regex: new RegExp(JSON.parse(req.query.search).title)}, userId: req.session.userId} : {userId: req.session.userId};
-    blog.find(condition, '-content').estimatedDocumentCount().then(count => {
-        if( count === 0 ) {
-            res.json({
-                list: [],
-                pageNum: 1,
-                pageSize,
-                count
-            });
-            return;
-        }
-        if( pageSize * pageNum > count ) {
-            pageNum = Math.ceil(count / pageSize);
-        }
-        blog.find(condition, '-content').sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
-            res.json({
-                list,
-                pageNum: pageNum || 1,
-                pageSize,
-                count
-            });
+    var count = await blog.countDocuments(condition);
+    if( count === 0 ) {
+        res.send({
+            list: [],
+            count: 0,
+            pageNum: 1,
+            pageSize,
+            pageSizeOpts: [10, 20]
         });
+        return;
+    }
+    if( pageSize * pageNum > count ) {
+        pageNum = Math.ceil(count / pageSize);
+    }
+    var list = await blog.find(condition, '-hash').sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize);
+    res.send({
+        list,
+        count,
+        pageNum,
+        pageSize,
+        pageSizeOpts: [10, 20]
     });
+    // blog.find(condition, '-content').estimatedDocumentCount().then(count => {
+    //     if( count === 0 ) {
+    //         res.json({
+    //             list: [],
+    //             pageNum: 1,
+    //             pageSize,
+    //             count
+    //         });
+    //         return;
+    //     }
+    //     if( pageSize * pageNum > count ) {
+    //         pageNum = Math.ceil(count / pageSize);
+    //     }
+    //     blog.find(condition, '-content').sort('-_id').skip((pageNum-1) * pageSize).limit(pageSize).then(list => {
+    //         res.json({
+    //             list,
+    //             pageNum: pageNum || 1,
+    //             pageSize,
+    //             count
+    //         });
+    //     });
+    // });
 });
 
 //  添加文章

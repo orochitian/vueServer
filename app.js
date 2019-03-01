@@ -7,10 +7,11 @@ var session = require('express-session');
 var history = require('connect-history-api-fallback');
 
 app.use('*', (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "http://localhost:8081");
+    // res.header("Access-Control-Allow-Origin", "http://localhost:8081");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Credentials", true);
+    // res.header("Access-Control-Allow-Credentials", true);
+
     // res.header("Content-Type", "application/json; charset=utf-8");
     next();
 });
@@ -113,8 +114,8 @@ mongo.connect('mongodb://132.232.119.153:27017/vue', { useNewUrlParser: true, us
     if( err ) {
         console.log('数据库启动失败：', err);
     } else {
-        app.listen('8082', err => {
-            err ? console.log('服务器启动失败：', err) : console.log('服务器端口：8082');
+        app.listen('80', err => {
+            err ? console.log('服务器启动失败：', err) : console.log('服务器端口：80');
         })
     }
 })
