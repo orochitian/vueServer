@@ -139,7 +139,7 @@ router.post('/', (req, res) => {
     mkDir(uploadDir, () => {
         form.parse(req, uploadCallback);
     });
-})
+});
 
 //  获取图片列表
 router.get('/getPhotos', async (req, res) => {
