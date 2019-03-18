@@ -12,7 +12,9 @@ function getUrl(url) {
             url,
             method: 'GET',
             encoding: null,
-            tunnel: false
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+            }
         }, (err, res, body) => {
             if( err ) {
                 reject(err);
@@ -24,9 +26,14 @@ function getUrl(url) {
 }
 
 //  解析页面
-function parseUrl(url, callback) {
+function parseUrl(url, callback, isUtf8) {
     return getUrl(url).then(urlData => {
-        var parseData = iconv.decode(urlData.body, 'gbk').replace('charset=GBK', 'charset=UTF-8');
+        //  如果网站编码是GBK才转
+        if( !isUtf8 ) {
+            var parseData = iconv.decode(urlData.body, 'gbk').replace('charset=GBK', 'charset=UTF-8');
+        } else {
+            var parseData = urlData.body;
+        }
         var querySelector = cheerio.load(parseData);
         return callback(querySelector, parseData, urlData);
     }).catch(err => {
@@ -35,7 +42,9 @@ function parseUrl(url, callback) {
 }
 
 //  小说网站
-const novelUrl = 'https://www.qk6.org';
+const novelUrl = 'https://www.xiashutxt.com';
+//  视频网站
+//  另一个可用播放源：https://www.88ys.cn
 const videoUrl = 'https://www.xunleige.com';
 
 //  搜索视频
@@ -123,6 +132,9 @@ router.get('/getVideoDetail', async (req, res) => {
     res.send(videoSrc);
 });
 
+// var str = '/search.html?searchtype=all&searchkey=我的&page=2';
+// console.log(str.split('/search.html?searchtype=all&searchkey=')[1].split('&page='));
+
 //  搜索小说
 router.get('/searchNovel', async (req, res) => {
     if( !req.query.search ) {
@@ -130,88 +142,92 @@ router.get('/searchNovel', async (req, res) => {
         return;
     }
     var search = JSON.parse(req.query.search);
-    if( search.page ) {
-        var searchUrl = search.page;
-    } else {
-        var novelTitle = gbk.URI.encodeURIComponent(search.title);
-        switch (search.type) {
-            case 1:
-                var searchType = 'novelname'
-                break
-            case 2:
-                var searchType = 'author'
-                break
-            default:
-                var searchType = 'novelname'
-        }
-        var searchUrl = novelUrl + '/novel.php?action=search&searchtype=' + searchType + '&searchkey=' + novelTitle + '&input=';
-    }
+    var searchUrl = novelUrl + '/search.html?searchkey=' + encodeURIComponent(search.title) + '&searchtype=all&page=' + search.pageNum;
     var searchList = await parseUrl(searchUrl, $ => {
         var searchData = {
             list: [],
             pages: [],
-            state: '',
             total: ''
         };
-        $('.ss_box').each(function () {
-            var book = {
-                name: $(this).find('.sp_name').text(),
-                link: $(this).find('.sp_name .sp_bookname').attr('href').split('info.html')[0],
-                desc: $(this).find('.jj_txt').text()
-            }
-            searchData.list.push(book);
-        });
-
-        $('#pagelink a').each(function () {
-            searchData.pages.push({
-                link: $(this).attr('href'),
-                text: $(this).text()
+        $('#waterfall .item').each(function (itemIndex, item) {
+            searchData.list.push({
+                title: $(item).find('.title a').text(),
+                link: $(item).find('.title a').attr('href'),
+                desc: $(item).find('.intro').text(),
+                img: $(item).find('.pic img').attr('data-original')
             });
         });
-        searchData.state = $('#pagestats').text();
-        searchData.total = $("#pagelink").contents().filter(function () {
-            return this.nodeType == 3;
-        }).text().replace(/\s/g, '');
+        $('.pagination a').each(function () {
+            searchData.pages.push({
+                link: $(this).attr('href'),
+                text: $(this).text(),
+                active: $(this).hasClass('current')
+            });
+        });
+        searchData.total = $(".pagination").children().first().text();
         return searchData;
-    });
+    }, true);
     res.send(searchList);
 });
 
 //  获取小说列表
 router.get('/getNovelList', async (req, res) => {
-    var novelData = await parseUrl(req.query.link, $ => {
-        var novelData = {};
-        var menu = [];
-        $('.zjbox ul').each(function (ulIndex, ul) {
-            $(ul).find('li').each(function (liIndex, li) {
-                menu.push({
-                    title: $(li).find('a').text(),
-                    link: $(li).find('a').attr('href')
-                });
+    var nUrl = novelUrl + '/' + req.query.id;
+    var novelData = await parseUrl(nUrl, $ => {
+        var novelData = {
+            title: '',
+            img: '',
+            topList: [],
+            lastList: [],
+            ycnum: 0,
+            novelId: req.query.id
+        };
+        novelData.title = $('#info .infotitle > h1').text();
+        novelData.img = $('#picbox > .img_in > img').attr('data-original');
+        $('#toplist > li').each(function () {
+            novelData.topList.push({
+                title: $(this).find('a').text(),
+                link: $(this).find('a').attr('href')
             });
         });
-        novelData.menu = menu;
-        novelData.newchapter = $('.newchapter a').text();
-        novelData.novelName = $('#bookname h1').text();
-
+        $('#lastchapter > li').each(function () {
+            novelData.lastList.push({
+                title: $(this).find('a').text(),
+                link: $(this).find('a').attr('href')
+            });
+        });
+        novelData.ycnum = parseInt($('#hidc .ycnum').text());
         return novelData;
-    });
-    var downloadUrl = await parseUrl(req.query.link + 'txt.html', $ => {
-        return $('#TxtdownTop').children('a').last().attr('href');
-    });
-    novelData.downloadUrl = downloadUrl;
+    }, true);
     res.send(novelData);
+});
+
+//  获取隐藏章节
+router.get('/getHiddenList', async (req, res) => {
+    var hiddenList = await parseUrl(novelUrl + '/api/ajax/zj?id='+ req.query.id +'&num='+ req.query.num +'&order=asc', $ => {
+        var hiddenList = [];
+        $('li').each(function () {
+            hiddenList.push({
+                title: $(this).find('a').text(),
+                link: $(this).find('a').attr('href')
+            });
+        });
+        return hiddenList;
+    }, true);
+    res.send(hiddenList);
 });
 
 //  获取章节内容
 router.get('/getNovelDetail', async (req, res) => {
-    var novelData = await parseUrl(req.query.link, $ => {
+    var novelData = await parseUrl(novelUrl + req.query.link, $ => {
         var novelData = {};
-        $('#content').find('a,div').remove();
-        novelData.content = $('#content').html();
-        novelData.title = $('#main h1').text();
+        $('#chaptercontent').find('a,div').remove();
+        novelData.content = $('#chaptercontent').html();
+        novelData.title = $('.title > h1 > a').text();
+        novelData.prevLink = $('.operate li').first().find('a').attr('href').indexOf('.html') !== -1 ? $('.operate li').first().find('a').attr('href') : '';
+        novelData.nextLink = $('.operate li').last().find('a').attr('href').indexOf('.html') !== -1 ? $('.operate li').last().find('a').attr('href') : '';
         return novelData;
-    });
+    }, true);
     res.send(novelData);
 });
 
