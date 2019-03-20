@@ -180,9 +180,16 @@ router.get('/getNovelList', async (req, res) => {
             topList: [],
             lastList: [],
             ycnum: 0,
-            novelId: req.query.id
+            novelId: req.query.id,
+            author: '',
+            desc: '',
+            theLast: ''
         };
-        novelData.title = $('#info .infotitle > h1').text();
+        novelData.title = $('#info .infotitle > h1').text().replace(/《|》/g, '');
+        novelData.author = $('#infobox .username a').text();
+        $('#aboutbook').find('a,h3').remove();
+        novelData.desc = $('#aboutbook').text();
+        novelData.theLast = $('#info .tag > a').text();
         novelData.img = $('#picbox > .img_in > img').attr('data-original');
         $('#toplist > li').each(function () {
             novelData.topList.push({
