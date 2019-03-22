@@ -132,8 +132,69 @@ router.get('/getVideoDetail', async (req, res) => {
     res.send(videoSrc);
 });
 
-// var str = '/search.html?searchtype=all&searchkey=我的&page=2';
-// console.log(str.split('/search.html?searchtype=all&searchkey=')[1].split('&page='));
+
+//  获取小说首页
+router.get('/getNovelIndex', async (req, res) => {
+    var result =  await parseUrl(novelUrl, $ => {
+        var tabs = [];
+        var hots = [];
+        var news = [];
+        $('ul.male li').first().remove();
+        $('ul.male li').each(function (i, li) {
+            var $a = $(this).find('a');
+            tabs.push({
+                title: $a.text(),
+                link: $a.attr('href')
+            });
+        });
+        $('.free_book_list .cont > ul > li').each(function (i, li) {
+            var $a = $(this).find('a');
+            hots.push({
+                title: $a.find('h3').text(),
+                link: $a.attr('href'),
+                img: $a.find('img').attr('data-original')
+            });
+        });
+        $('#main > .bt > em .lists li').each(function (i, li) {
+            var $a = $(this).find('>a');
+            news.push({
+                title: $a.text(),
+                link: $a.attr('href')
+            });
+        });
+        return {tabs, hots, news}
+    }, true);
+    res.send(result);
+});
+
+//  获取小说分类下的列表
+router.get('/getNovelClassifyList', async (req, res) => {
+    var result = await parseUrl(novelUrl + req.query.link, $ => {
+        var result = {
+            list: [],
+            pages: [],
+            total: ''
+        }
+        $('#waterfall > .item').each(function (i, item){
+            var $this = $(this);
+            result.list.push({
+                title: $this.find('.title a').text(),
+                id: parseInt($this.find('.title a').attr('href').replace(/\//g, '')),
+                img: $this.find('.pic img').attr('data-original')
+            });
+        });
+        $('.pagination a').each(function () {
+            result.pages.push({
+                link: $(this).attr('href'),
+                text: $(this).text(),
+                active: $(this).hasClass('current')
+            });
+        });
+        result.total = $(".pagination").children().first().text();
+        return result;
+    }, true);
+    res.send(result);
+});
 
 //  搜索小说
 router.get('/searchNovel', async (req, res) => {
@@ -170,7 +231,7 @@ router.get('/searchNovel', async (req, res) => {
     res.send(searchList);
 });
 
-//  获取小说列表
+//  获取小说菜单
 router.get('/getNovelList', async (req, res) => {
     var nUrl = novelUrl + '/' + req.query.id;
     var novelData = await parseUrl(nUrl, $ => {
