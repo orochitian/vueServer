@@ -1,4 +1,5 @@
 var router = require('express').Router();
+var UserModel = require('../model/userModel');
 var request = require('request');
 var cheerio = require('cheerio');
 var iconv = require('iconv-lite');
@@ -234,7 +235,7 @@ router.get('/searchNovel', async (req, res) => {
 //  获取小说菜单
 router.get('/getNovelList', async (req, res) => {
     var nUrl = novelUrl + '/' + req.query.id;
-    var novelData = await parseUrl(nUrl, $ => {
+    var novelData = await parseUrl (nUrl, $ => {
         var novelData = {
             title: '',
             img: '',
@@ -244,7 +245,8 @@ router.get('/getNovelList', async (req, res) => {
             novelId: req.query.id,
             author: '',
             desc: '',
-            theLast: ''
+            theLast: '',
+            hasRead: false
         };
         novelData.title = $('#info .infotitle > h1').text().replace(/《|》/g, '');
         novelData.author = $('#infobox .username a').text();
@@ -267,6 +269,16 @@ router.get('/getNovelList', async (req, res) => {
         novelData.ycnum = parseInt($('#hidc .ycnum').text());
         return novelData;
     }, true);
+    var user = await UserModel.findById(req.session.userId);
+    var hasRead = (function () {
+        for( var i=0; i<user.novelHistory.length; i++ ) {
+            if( user.novelHistory[i].id === req.query.id ) {
+                return user.novelHistory[i].lastChapterLink;
+            }
+        }
+        return false;
+    })();
+    novelData.hasRead = hasRead;
     res.send(novelData);
 });
 
@@ -296,7 +308,38 @@ router.get('/getNovelDetail', async (req, res) => {
         novelData.nextLink = $('.operate li').last().find('a').attr('href').indexOf('.html') !== -1 ? $('.operate li').last().find('a').attr('href') : '';
         return novelData;
     }, true);
-    res.send(novelData);
+
+    var user = await UserModel.findById(req.session.userId);
+    var novelHistory = user.novelHistory;
+    var hasRead = (function () {
+        for( var i=0; i<novelHistory.length; i++ ) {
+            if( novelHistory[i].id === req.query.id ) {
+                novelHistory[i].lastChapter = novelData.title;
+                novelHistory[i].lastChapterLink = req.query.link;
+                var updateHistory = novelHistory[i];
+                novelHistory.splice(i, 1);
+                novelHistory.unshift(updateHistory);
+                return true;
+            }
+        }
+        return false;
+    })();
+
+    if( !hasRead ) {
+        if( novelHistory.length > 30 ) {
+            novelHistory.pop();
+        }
+        novelHistory.unshift({
+            id: req.query.id,
+            lastChapter: novelData.title,
+            lastChapterLink: req.query.link
+        });
+    }
+    UserModel.findByIdAndUpdate(req.session.userId, {novelHistory}).then(user => {
+        res.send(novelData);
+    });
+
+
 });
 
 module.exports = router;

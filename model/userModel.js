@@ -8,7 +8,8 @@ var userSchema = new mongo.Schema({
     tel: String,
     sex: String,
     desc: String,
-    sessionId: String
+    sessionId: String,
+    novelHistory: Array
 });
 
 var user = mongo.model('user', userSchema);
