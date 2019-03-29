@@ -45,8 +45,7 @@ function parseUrl(url, callback, isUtf8) {
 //  小说网站
 const novelUrl = 'https://www.xiashutxt.com';
 //  视频网站
-//  另一个可用播放源：https://www.88ys.cn
-const videoUrl = 'https://www.xunleige.com';
+const videoUrl = 'https://kuyun.tv';
 
 //  搜索视频
 router.get('/searchVideo', async (req, res) => {
@@ -56,10 +55,10 @@ router.get('/searchVideo', async (req, res) => {
     }
     var search = JSON.parse(req.query.search);
     if( search.page ) {
-        var searchUrl = search.page;
+        var searchUrl = videoUrl + search.page;
     } else {
-        var videoTitle = gbk.URI.encodeURIComponent(search.title);
-        var searchUrl = videoUrl + '/search.asp?page=1&searchword=' + videoTitle + '&searchtype=-1';
+        var videoTitle = encodeURI(search.title);
+        var searchUrl = videoUrl + '/vod/search/page/1/wd/' + videoTitle + '.html';
     }
     var searchList = await parseUrl(searchUrl, $ => {
         var searchData = {
@@ -67,27 +66,26 @@ router.get('/searchVideo', async (req, res) => {
             pages: [],
             state: ''
         };
-        $('#results .result').each(function (index, result){
-            var $url = $(this).find('.c-title a').eq(1);
+        $('.fed-part-layout .fed-deta-info').each(function (index, item) {
+            var $this = $(this);
             searchData.list.push({
-                title: $url.text(),
-                link: $url.attr('href'),
-                desc: $(this).find('.c-content .c-abstract').text(),
-                type: $(this).find('.c-title a').first().text()
+                title: $this.find('.fed-deta-content > h1 > a').text(),
+                link: $this.find('.fed-deta-button a').attr('href'),
+                desc: $this.find('.fed-deta-content ul.fed-part-rows li').last().text()
             });
         });
-        $('.page').children().not('span').each(function (index, child) {
-            var active = this.tagName === 'em' && !$(this).hasClass('nolink') ? true : false;
-            var link = $(this).attr('href') ? videoUrl + '/search.asp' +  $(this).attr('href') : '';
+        $('.fed-part-layout .fed-page-info a').not('.fed-page-jump').each(function (index, item) {
+            var $this = $(this);
             searchData.pages.push({
-                link,
-                text: $(this).text(),
-                active
+                text: $this.text(),
+                link: $this.attr('href'),
+                active: $this.hasClass('fed-btns-green'),
+                disabled: $this.hasClass('fed-btns-disad')
             });
         });
-        searchData.state = $('.page span').first().text();
+        searchData.state = $('.fed-list-head .fed-font-xvi').text();
         return searchData;
-    });
+    }, true);
     res.send(searchList);
 });
 
@@ -98,17 +96,15 @@ router.get('/getVideoList', async (req, res) => {
             title: '',
             list: []
         }
-        videoData.title = $('#jqjs h2 strong').text();
-        $('#liebiao > #xigua_jk').each(function () {
-            $(this).find('ul li').each(function () {
-                videoData.list.push({
-                    title: $(this).find('a').text(),
-                    link: $(this).find('a').attr('href')
-                });
+        videoData.title = $('.fed-deta-info .fed-deta-content h1 a').text();
+        $('.fed-play-item .fed-part-rows').not('.fed-drop-head').find('li').each(function () {
+            videoData.list.push({
+                title: $(this).find('a').text(),
+                link: $(this).find('a').attr('href')
             });
         });
         return videoData;
-    });
+    }, true);
     res.send(videoData);
 });
 
@@ -116,20 +112,24 @@ router.get('/getVideoList', async (req, res) => {
 //  获取电影播放地址
 router.get('/getVideoDetail', async (req, res) => {
     //  获取电影网站获取视频脚本的地址
-    var jsSrc = await parseUrl(videoUrl + req.query.link, $ => {
-        return $('#classpage .left').children().first().attr('src');
+    var videoSrc = await parseUrl(videoUrl + req.query.link, $ => {
+        console.log($('.fed-play-player').html());
+        var iframeSrc = $('#fed-play-iframe').attr('src');
+        // console.log(iframeSrc);
+        // var videoSrc = iframeSrc.split('?url=')[1];
+        // return videoSrc;
     });
     //  获取脚本中视频的真实地址
-    var videoSrc = await parseUrl(videoUrl + jsSrc, $ => {
-        var scriptBody = unescape($('body').text());
-        var sources = scriptBody.match(/(?<=http).*?(?=\$)/g);
-        if( sources ) {
-            var m3u8 = 'http' + sources[0];
-        } else {
-            var m3u8 = '';
-        }
-        return m3u8;
-    });
+    // var videoSrc = await parseUrl(videoUrl + jsSrc, $ => {
+    //     var scriptBody = unescape($('body').text());
+    //     var sources = scriptBody.match(/(?<=http).*?(?=\$)/g);
+    //     if( sources ) {
+    //         var m3u8 = 'http' + sources[0];
+    //     } else {
+    //         var m3u8 = '';
+    //     }
+    //     return m3u8;
+    // });
     res.send(videoSrc);
 });
 
