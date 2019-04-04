@@ -2,6 +2,8 @@ var router = require('express').Router();
 var UserModel = require('../model/userModel');
 var request = require('request');
 var cheerio = require('cheerio');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 var iconv = require('iconv-lite');
 var gbk = require('gbk.js');
 
@@ -111,26 +113,18 @@ router.get('/getVideoList', async (req, res) => {
 
 //  获取电影播放地址
 router.get('/getVideoDetail', async (req, res) => {
+    // https://kuyun.tv/vod/play/id/24404/sid/1/nid/1.html
+
     //  获取电影网站获取视频脚本的地址
-    var videoSrc = await parseUrl(videoUrl + req.query.link, $ => {
-        console.log($('.fed-play-player').html());
-        var iframeSrc = $('#fed-play-iframe').attr('src');
-        // console.log(iframeSrc);
-        // var videoSrc = iframeSrc.split('?url=')[1];
-        // return videoSrc;
+    var dom = await JSDOM.fromURL(videoUrl + req.query.link, {
+        runScripts: "dangerously",
+        resources: "usable"
     });
-    //  获取脚本中视频的真实地址
-    // var videoSrc = await parseUrl(videoUrl + jsSrc, $ => {
-    //     var scriptBody = unescape($('body').text());
-    //     var sources = scriptBody.match(/(?<=http).*?(?=\$)/g);
-    //     if( sources ) {
-    //         var m3u8 = 'http' + sources[0];
-    //     } else {
-    //         var m3u8 = '';
-    //     }
-    //     return m3u8;
-    // });
-    res.send(videoSrc);
+    dom.window.onload = function () {
+        var frame = dom.window.document.getElementById('fed-play-iframe');
+        res.send(frame.contentWindow.huiid);
+    }
+
 });
 
 
