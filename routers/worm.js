@@ -4,6 +4,7 @@ var request = require('request');
 var cheerio = require('cheerio');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
+const virtualConsole = new jsdom.VirtualConsole();
 var iconv = require('iconv-lite');
 var gbk = require('gbk.js');
 
@@ -85,7 +86,7 @@ router.get('/searchVideo', async (req, res) => {
                 disabled: $this.hasClass('fed-btns-disad')
             });
         });
-        searchData.state = $('.fed-list-head .fed-font-xvi').text();
+        searchData.state = searchData.list.length * (searchData.pages.length < 1 ? 1 : searchData.pages.length );
         return searchData;
     }, true);
     res.send(searchList);
@@ -96,9 +97,18 @@ router.get('/getVideoList', async (req, res) => {
     var videoData = await parseUrl(videoUrl + req.query.link, $ => {
         var videoData = {
             title: '',
-            list: []
+            list: [],
+            desc: '',
+            info: {}
         }
         videoData.title = $('.fed-deta-info .fed-deta-content h1 a').text();
+        var infoLi = $('.fed-deta-info ul.fed-part-rows li');
+        videoData.desc = infoLi.last().find('.fed-part-esan').text();
+        videoData.info = {
+            type: infoLi.eq(2).find('a').text(),
+            area: infoLi.eq(3).find('a').text(),
+            date: infoLi.eq(4).find('a').text(),
+        }
         $('.fed-play-item .fed-part-rows').not('.fed-drop-head').find('li').each(function () {
             videoData.list.push({
                 title: $(this).find('a').text(),
@@ -114,11 +124,11 @@ router.get('/getVideoList', async (req, res) => {
 //  获取电影播放地址
 router.get('/getVideoDetail', async (req, res) => {
     // https://kuyun.tv/vod/play/id/24404/sid/1/nid/1.html
-
     //  获取电影网站获取视频脚本的地址
     var dom = await JSDOM.fromURL(videoUrl + req.query.link, {
         runScripts: "dangerously",
-        resources: "usable"
+        resources: "usable",
+        virtualConsole
     });
     dom.window.onload = function () {
         var frame = dom.window.document.getElementById('fed-play-iframe');
