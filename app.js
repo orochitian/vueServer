@@ -107,6 +107,7 @@ app.use('/user', require('./routers/user'));
 app.use('/upload', require('./routers/upload'));
 app.use('/worm', require('./routers/worm'));
 app.use('/novel', require('./routers/novel'));
+app.use('/video', require('./routers/video'));
 
 /*
 *  mongod --dbpath=/opt/db --bind_ip=0.0.0.0

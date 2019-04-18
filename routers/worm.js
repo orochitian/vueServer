@@ -8,6 +8,20 @@ const virtualConsole = new jsdom.VirtualConsole();
 var iconv = require('iconv-lite');
 var gbk = require('gbk.js');
 
+// 破解vip视频接口
+// https://cdn.yangju.vip/k/?url=
+// https://jx.lache.me/cc/?url=
+// https://api.653520.top/vip/?url=
+// https://jx.ab33.top/vip/?url=
+// https://vip.mpos.ren/v/?url=
+// https://jx.000180.top/jx/?url=
+// https://jx.km58.top/jx/?url=
+// https://api.52xmw.com/?url
+// http://jqaaa.com/jx.php?url=
+
+//  网友送的免费解析接口  http://www.jiaozika.xyz/?url=
+//  http://jx.arpps.com/pps/pps.php?url=
+
 //  抓取页面信息
 //  182.207.232.135:50465
 function getUrl(url) {
@@ -28,6 +42,29 @@ function getUrl(url) {
         });
     });
 }
+    // new Promise((resolve, reject) => {
+    //     request({
+    //         url: 'http://www.jiaozika.xyz/',
+    //         method: 'POST',
+    //         encoding: null,
+    //         body: {
+    //             url: 'https://v.youku.com/v_show/id_XNDEwNTMzMzM2OA==.html?spm=a2ha1.12675304.m_7182_c_14738.d_1'
+    //         },
+    //         headers: {
+    //             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+    //         },
+    //         json: true
+    //     }, (err, res, body) => {
+    //         if( err ) {
+    //             reject(err);
+    //         } else {
+    //             console.log(body);
+    //             resolve({res, body});
+    //         }
+    //     });
+    // })
+
+
 
 //  解析页面
 function parseUrl(url, callback, isUtf8) {
@@ -139,19 +176,63 @@ router.get('/getVideoList', async (req, res) => {
     res.send(videoData);
 });
 
-
 //  获取电影播放地址
 router.get('/getVideoDetail', async (req, res) => {
     // https://kuyun.tv/vod/play/id/24404/sid/1/nid/1.html
     //  获取电影网站获取视频脚本的地址
+
     var dom = await JSDOM.fromURL(videoUrl + req.query.link, {
         runScripts: "dangerously",
         resources: "usable",
         virtualConsole
     });
+<<<<<<< HEAD
     dom.window.onload = function () {
         var frame = dom.window.document.getElementById('fed-play-iframe');
         res.send(frame.getAttribute('src'));
+=======
+
+    dom.window.onload = async function () {
+        var document = dom.window.document;
+        var frame = document.getElementById('fed-play-iframe');
+        // res.send(frame.contentWindow.huiid);
+        var title = document.getElementsByClassName('fed-play-title')[0].getElementsByClassName('fed-play-text')[0].innerHTML;
+
+        var user = await UserModel.findById(req.session.userId);
+        var videoHistory = user.videoHistory;
+        var hasRead = (function () {
+            for( var i=0; i<videoHistory.length; i++ ) {
+                if( videoHistory[i].id === req.query.id ) {
+                    videoHistory[i].lastChapter = title;
+                    videoHistory[i].lastChapterLink = req.query.link;
+                    var updateHistory = videoHistory[i];
+                    videoHistory.splice(i, 1);
+                    videoHistory.unshift(updateHistory);
+                    return true;
+                }
+            }
+            return false;
+        })();
+
+        if( !hasRead ) {
+            if( videoHistory.length > 30 ) {
+                videoHistory.pop();
+            }
+            videoHistory.unshift({
+                id: req.query.id,
+                lastChapter: title,
+                lastChapterLink: req.query.link
+            });
+        }
+        UserModel.findByIdAndUpdate(req.session.userId, {videoHistory}).then(user => {
+            res.send({
+                title,
+                link: frame.getAttribute('src'),
+                prev: document.getElementsByClassName('fed-play-prev')[0].getAttribute('href'),
+                next: document.getElementsByClassName('fed-play-next')[0].getAttribute('href')
+            });
+        });
+>>>>>>> a393c9e2a5a54952614876d95747dd240eaa47fa
     }
 
 });
