@@ -45,6 +45,25 @@ function parseUrl(url, callback, isUtf8) {
     });
 }
 
+// new Promise((resolve, reject) => {
+//         request({
+//             url: 'http://jx.ayblog.cn/412/pangu/index.php?url=https://v.qq.com/x/cover/dwt56ndspm9xm89.html',
+//             method: 'GET',
+//             encoding: null,
+//             headers: {
+//                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+//             }
+//         }, (err, res, body) => {
+//             if( err ) {
+//                 reject(err);
+//             } else {
+//             	var $ = cheerio.load(body);
+//                 console.log($('body').html());
+//                 resolve({res, body});
+//             }
+//         });
+//     })
+
 //  小说网站
 const novelUrl = 'https://www.xiashutxt.com';
 //  视频网站
@@ -132,7 +151,7 @@ router.get('/getVideoDetail', async (req, res) => {
     });
     dom.window.onload = function () {
         var frame = dom.window.document.getElementById('fed-play-iframe');
-        res.send(frame.contentWindow.huiid);
+        res.send(frame.getAttribute('src'));
     }
 
 });
