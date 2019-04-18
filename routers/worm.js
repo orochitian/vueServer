@@ -42,27 +42,27 @@ function getUrl(url) {
         });
     });
 }
-    // new Promise((resolve, reject) => {
-    //     request({
-    //         url: 'http://www.jiaozika.xyz/',
-    //         method: 'POST',
-    //         encoding: null,
-    //         body: {
-    //             url: 'https://v.youku.com/v_show/id_XNDEwNTMzMzM2OA==.html?spm=a2ha1.12675304.m_7182_c_14738.d_1'
-    //         },
-    //         headers: {
-    //             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
-    //         },
-    //         json: true
-    //     }, (err, res, body) => {
-    //         if( err ) {
-    //             reject(err);
-    //         } else {
-    //             console.log(body);
-    //             resolve({res, body});
-    //         }
-    //     });
-    // })
+// new Promise((resolve, reject) => {
+//     request({
+//         url: 'http://www.jiaozika.xyz/',
+//         method: 'POST',
+//         encoding: null,
+//         body: {
+//             url: 'https://v.youku.com/v_show/id_XNDEwNTMzMzM2OA==.html?spm=a2ha1.12675304.m_7182_c_14738.d_1'
+//         },
+//         headers: {
+//             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+//         },
+//         json: true
+//     }, (err, res, body) => {
+//         if( err ) {
+//             reject(err);
+//         } else {
+//             console.log(body);
+//             resolve({res, body});
+//         }
+//     });
+// })
 
 
 
@@ -81,25 +81,6 @@ function parseUrl(url, callback, isUtf8) {
         console.log(err);
     });
 }
-
-// new Promise((resolve, reject) => {
-//         request({
-//             url: 'http://jx.ayblog.cn/412/pangu/index.php?url=https://v.qq.com/x/cover/dwt56ndspm9xm89.html',
-//             method: 'GET',
-//             encoding: null,
-//             headers: {
-//                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
-//             }
-//         }, (err, res, body) => {
-//             if( err ) {
-//                 reject(err);
-//             } else {
-//             	var $ = cheerio.load(body);
-//                 console.log($('body').html());
-//                 resolve({res, body});
-//             }
-//         });
-//     })
 
 //  小说网站
 const novelUrl = 'https://www.xiashutxt.com';
@@ -186,11 +167,6 @@ router.get('/getVideoDetail', async (req, res) => {
         resources: "usable",
         virtualConsole
     });
-<<<<<<< HEAD
-    dom.window.onload = function () {
-        var frame = dom.window.document.getElementById('fed-play-iframe');
-        res.send(frame.getAttribute('src'));
-=======
 
     dom.window.onload = async function () {
         var document = dom.window.document;
@@ -232,7 +208,6 @@ router.get('/getVideoDetail', async (req, res) => {
                 next: document.getElementsByClassName('fed-play-next')[0].getAttribute('href')
             });
         });
->>>>>>> a393c9e2a5a54952614876d95747dd240eaa47fa
     }
 
 });
