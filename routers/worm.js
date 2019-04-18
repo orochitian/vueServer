@@ -157,19 +157,57 @@ router.get('/getVideoList', async (req, res) => {
     res.send(videoData);
 });
 
-
 //  获取电影播放地址
 router.get('/getVideoDetail', async (req, res) => {
     // https://kuyun.tv/vod/play/id/24404/sid/1/nid/1.html
     //  获取电影网站获取视频脚本的地址
+
     var dom = await JSDOM.fromURL(videoUrl + req.query.link, {
         runScripts: "dangerously",
         resources: "usable",
         virtualConsole
     });
-    dom.window.onload = function () {
-        var frame = dom.window.document.getElementById('fed-play-iframe');
-        res.send(frame.contentWindow.huiid);
+
+    dom.window.onload = async function () {
+        var document = dom.window.document;
+        var frame = document.getElementById('fed-play-iframe');
+        // res.send(frame.contentWindow.huiid);
+        var title = document.getElementsByClassName('fed-play-title')[0].getElementsByClassName('fed-play-text')[0].innerHTML;
+
+        var user = await UserModel.findById(req.session.userId);
+        var videoHistory = user.videoHistory;
+        var hasRead = (function () {
+            for( var i=0; i<videoHistory.length; i++ ) {
+                if( videoHistory[i].id === req.query.id ) {
+                    videoHistory[i].lastChapter = title;
+                    videoHistory[i].lastChapterLink = req.query.link;
+                    var updateHistory = videoHistory[i];
+                    videoHistory.splice(i, 1);
+                    videoHistory.unshift(updateHistory);
+                    return true;
+                }
+            }
+            return false;
+        })();
+
+        if( !hasRead ) {
+            if( videoHistory.length > 30 ) {
+                videoHistory.pop();
+            }
+            videoHistory.unshift({
+                id: req.query.id,
+                lastChapter: title,
+                lastChapterLink: req.query.link
+            });
+        }
+        UserModel.findByIdAndUpdate(req.session.userId, {videoHistory}).then(user => {
+            res.send({
+                title,
+                link: frame.getAttribute('src'),
+                prev: document.getElementsByClassName('fed-play-prev')[0].getAttribute('href'),
+                next: document.getElementsByClassName('fed-play-next')[0].getAttribute('href')
+            });
+        });
     }
 
 });

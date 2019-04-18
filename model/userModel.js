@@ -9,7 +9,8 @@ var userSchema = new mongo.Schema({
     sex: String,
     desc: String,
     sessionId: String,
-    novelHistory: Array
+    novelHistory: Array,
+    videoHistory: Array
 });
 
 var user = mongo.model('user', userSchema);
